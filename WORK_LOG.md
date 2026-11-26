@@ -24,5 +24,5 @@
 
 ## Latest change
 
-- The source link now uses generic “View photo source” text rather than exposing the source page or image filename. Photographer and license information remain visible as attribution.
+- The source link now uses generic “View photo source” text rather than exposing the source page or image filename. The link and all photographer/license attribution are hidden during a question and shown after the answer or timeout.
 - If a saved image fails to load, the quiz removes that destination from the current question pool and skips to another one. It reports when fewer than ten working photos remain.

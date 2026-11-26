@@ -7,7 +7,7 @@ These instructions apply only to the travel-landmark quiz in this folder.
 - `index.html` loads `travel-data.js` and `travel-photos.js`.
 - The question pool must include only places with a mapping in `TRAVEL_PHOTOS` to a saved local image. Keep each mapped image in `images/`; do not add a live Wikipedia/Wikimedia lookup fallback unless the user asks.
 - Preserve the source/credit link for each image. Do not use a source filename or caption that gives away the answer before the player answers.
-- In the question view, use a generic “View photo source” link and show photographer/license credit without displaying `sourceTitle`.
+- Keep source links and all attribution hidden during an active question so neither titles nor credits can reveal the answer. Show them only after the answer or timeout; never display `sourceTitle`.
 - If a mapped local image fails to load, remove that place from the active pool and draw another question. Keep ten choices available when at least ten working photos remain.
 - `gerber-landmarks.csv` is the original attraction list; `travel-data.js` is what the page loads. The CSV is not loaded directly by the browser.
 - `places-without-photos.csv` records places for which no usable photo was saved.

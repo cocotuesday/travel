@@ -33,6 +33,7 @@
     #place-image { width:100%; height:100%; object-fit:cover; }
     .loading { color:#304d43; font-weight:750; position:absolute; text-align:center; padding:20px; }
     .photo-credit { min-height:17px; margin:-12px 0 14px; text-align:right; color:var(--muted); font-size:11px; }
+    .photo-credit[hidden] { display:none; }
     .photo-credit a { color:#c9ddd5; }
     .hint { text-align:center; color:var(--muted); font-size:14px; margin:0 0 17px; }
     .choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
@@ -104,9 +105,9 @@
       renderHighScores();
     }
     function stopTimer(){if(timerHandle!==null)clearInterval(timerHandle);timerHandle=null;}
-    function revealImage(){image.classList.add('revealed');}
+    function revealImage(){image.classList.add('revealed');$('photo-credit').hidden=false;}
     function setPhoto(place){
-      $('photo-credit').replaceChildren();
+      $('photo-credit').replaceChildren();$('photo-credit').hidden=true;
       showPhoto(photos[place.name]);
     }
     function showPhoto(photo){
@@ -138,7 +139,7 @@
       choices.replaceChildren();
       const distractors=shuffle(places.filter(p=>p.name!==current.name)).slice(0,9);
       shuffle([...distractors,current]).forEach(option=>{const b=document.createElement('button');b.type='button';b.className='choice';b.textContent=option.name;b.addEventListener('click',()=>answer(option,b));choices.append(b);});
-      image.onload=null;image.onerror=null;image.removeAttribute('src');image.classList.remove('revealed');image.alt='Mystery travel destination';loading.textContent='Finding a Wikipedia photo…';loading.classList.remove('hidden');
+      image.onload=null;image.onerror=null;image.removeAttribute('src');image.classList.remove('revealed');$('photo-credit').hidden=true;image.alt='Mystery travel destination';loading.textContent='Finding a Wikipedia photo…';loading.classList.remove('hidden');
       setPhoto(current);startTimer();
     }
     function rankNote(place){const rank=rankByName.get(place.name);return rank?` This place is #${rank.toLocaleString()} in the dataset’s visitor-count ranking.`:'';}
