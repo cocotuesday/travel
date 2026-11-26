@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10221f">
+  <title>Where in the World?</title>
+  <style>
+    :root { color-scheme: dark; --bg:#10221f; --panel:#1b302d; --panel2:#29423e; --ink:#f4f7f5; --muted:#adbfba; --yellow:#ffca55; --blue:#73b7ff; --red:#fa7777; --green:#78dfa8; }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif; color:var(--ink); background:radial-gradient(ellipse at 50% -15%,#36564c 0,#10221f 58%); display:grid; place-items:center; padding:24px; }
+    .shell { width:min(100%,620px); }
+    header { margin:0 0 18px; text-align:center; }
+    .brand { font-weight:950; letter-spacing:.035em; font-size:20px; }
+    .brand span { color:var(--yellow); }
+    .subbrand { color:var(--muted); font-size:13px; margin-top:4px; }
+    .leaderboard { margin:0 0 14px; padding:14px 16px 16px; border:1px solid #3c5850; border-radius:18px; background:rgba(27,48,45,.93); }
+    .leader-title { color:var(--yellow); font-size:12px; font-weight:900; letter-spacing:.13em; margin:0 0 10px; }
+    .high-scores { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+    .high-scores li { min-width:0; padding:7px 5px; border-radius:9px; background:#29423e; text-align:center; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .high-scores li span { display:block; color:var(--muted); font-size:10px; margin-bottom:2px; }
+    .high-scores .empty { grid-column:1/-1; color:var(--muted); font-size:12px; font-weight:500; }
+    .card { background:linear-gradient(150deg,rgba(35,58,53,.98),rgba(21,40,37,.99)); border:1px solid #3c5850; border-radius:26px; padding:26px; box-shadow:0 24px 70px #0005; }
+    .topline { display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:13px; font-weight:750; }
+    .question-heading { display:flex; align-items:center; justify-content:center; gap:15px; margin:0 0 6px; flex-wrap:wrap; }
+    h1 { margin:0; text-align:center; font-size:22px; }
+    .stats { display:flex; gap:11px; align-items:center; font-variant-numeric:tabular-nums; font-size:17px; font-weight:950; }
+    .timer { color:var(--yellow); white-space:nowrap; }
+    .score { color:var(--blue); white-space:nowrap; }
+    .stats-label { font-size:10px; opacity:.75; font-weight:750; margin-right:2px; }
+    .image-stage { height:310px; margin:18px 0 20px; border-radius:20px; background:linear-gradient(150deg,#deece7,#b1ccc1); display:grid; place-items:center; overflow:hidden; position:relative; }
+    .image-stage::after { content:""; position:absolute; inset:auto 0 0; height:35%; background:linear-gradient(transparent,#152c2630); pointer-events:none; }
+    #place-image { width:100%; height:100%; object-fit:cover; }
+    .loading { color:#304d43; font-weight:750; position:absolute; text-align:center; padding:20px; }
+    .photo-credit { min-height:17px; margin:-12px 0 14px; text-align:right; color:var(--muted); font-size:11px; }
+    .photo-credit[hidden] { display:none; }
+    .photo-credit a { color:#c9ddd5; }
+    .hint { text-align:center; color:var(--muted); font-size:14px; margin:0 0 17px; }
+    .choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
+    button { border:0; border-radius:13px; padding:10px 12px; min-height:49px; color:var(--ink); background:#2d4943; border:1px solid #4d6b62; font:inherit; font-weight:800; cursor:pointer; transition:transform .12s,filter .12s,background .12s; }
+    button:hover { filter:brightness(1.1); transform:translateY(-1px); }
+    button:active { transform:translateY(0); }
+    button:disabled { opacity:1; cursor:default; transform:none; }
+    .choice.correct { background:#28664e; border-color:var(--green); }
+    .choice.wrong { background:#783e47; border-color:#ff8d8f; }
+    .message { min-height:25px; text-align:center; font-weight:750; margin:14px 0 0; }
+    .message.good { color:var(--green); }
+    .message.bad { color:#ff9b9b; }
+    .actions { display:flex; justify-content:center; margin-top:12px; }
+    .secondary { background:var(--panel2); color:var(--ink); min-height:44px; padding:0 22px; }
+    .hidden { display:none!important; }
+    .error { color:#ffc1c1; font-size:14px; line-height:1.5; text-align:center; padding:15px; }
+    footer { text-align:center; font-size:11px; line-height:1.6; color:#91a49e; margin:17px 12px 0; }
+    footer a { color:#c2d0cb; }
+    @media(max-width:480px) { body{padding:14px}.card{padding:18px}.image-stage{height:250px}.question-heading{gap:9px}h1{font-size:20px}.stats{font-size:15px}.high-scores{grid-template-columns:repeat(5,minmax(0,1fr))} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><div class="brand">WHERE IN THE <span>WORLD?</span></div><div class="subbrand">A 10-choice travel photo quiz</div></header>
+    <section class="leaderboard" aria-label="All-time top ten high scores">
+      <h2 class="leader-title">ALL-TIME TOP 10</h2>
+      <ol class="high-scores" id="high-scores"><li class="empty">Finish a run to post your first score.</li></ol>
+    </section>
+    <section class="card" aria-live="polite">
+      <div class="topline"><span id="round">Loading places…</span><span id="points">—</span></div>
+      <div class="image-stage"><span class="loading" id="loading">Loading your first travel photo…</span><img id="place-image" alt="Mystery place"></div>
+      <div class="photo-credit" id="photo-credit"></div>
+      <div class="question-heading"><h1 id="prompt">Getting the quiz ready</h1><div class="stats"><span class="timer"><span class="stats-label">TIME</span><span id="timer">15s</span></span><span class="score"><span class="stats-label">SCORE</span><span id="score">0</span></span></div></div>
+      <p class="hint" id="hint">Pick the place shown in the photo.</p>
+      <div class="choices" id="choices" aria-label="Choose the place shown"></div>
+      <p class="message" id="message"></p>
+      <div class="actions"><button class="secondary hidden" id="continue" type="button">Next place →</button><button class="secondary hidden" id="restart" type="button">Play again</button></div>
+      <div class="error hidden" id="error"></div>
+    </section>
+    <footer>Questions are randomly selected from landmarks with saved photos. After each answer, see the place’s visitor-count rank in the full dataset. Photos are stored in this app; their Wikipedia or Wikimedia Commons source and license appear below each image.</footer>
+  </main>
+  <script src="travel-data.js"></script>
+  <script src="travel-photos.js"></script>
+  <script>
+  (() => {
+    const $ = id => document.getElementById(id);
+    const image = $('place-image'), loading = $('loading'), choices = $('choices');
+    const allPlaces = Array.isArray(window.TRAVEL_PLACES) ? window.TRAVEL_PLACES.filter(p => p.name) : [];
+    const photos = window.TRAVEL_PHOTOS || {};
+    let places = allPlaces.filter(p => photos[p.name]);
+    const ranked = [...allPlaces].sort((a,b) => (Number(b.visitors)||0) - (Number(a.visitors)||0) || a.name.localeCompare(b.name));
+    const rankByName = new Map(ranked.map((p,i) => [p.name, i+1]));
+    let pool = [], score = 0, streak = 0, current = null, answered = false, deadline = 0, timerHandle = null, scoreRecorded = false;
+    const unavailablePhotos = new Set();
+    const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+    function freshPool() { pool = shuffle([...places]); }
+    function readHighScores() {
+      try { const a=JSON.parse(localStorage.getItem('travel-quiz-scores')||'[]'); return Array.isArray(a)?a.filter(n=>Number.isFinite(n)&&n>=0).sort((x,y)=>y-x).slice(0,10):[]; }
+      catch { return []; }
+    }
+    function renderHighScores() {
+      const list=$('high-scores'); list.replaceChildren(); const scores=readHighScores();
+      if(!scores.length){const li=document.createElement('li');li.className='empty';li.textContent='Finish a run to post your first score.';list.append(li);return;}
+      scores.forEach((n,i)=>{const li=document.createElement('li');const label=document.createElement('span');label.textContent=`#${i+1}`;li.append(label,document.createTextNode(n.toLocaleString()));list.append(li);});
+    }
+    function recordScore() {
+      if(scoreRecorded)return; scoreRecorded=true;
+      if(score>0){localStorage.setItem('travel-quiz-scores',JSON.stringify([...readHighScores(),score].sort((a,b)=>b-a).slice(0,10)));}
+      renderHighScores();
+    }
+    function stopTimer(){if(timerHandle!==null)clearInterval(timerHandle);timerHandle=null;}
+    function revealImage(){image.classList.add('revealed');$('photo-credit').hidden=false;}
+    function setPhoto(place){
+      $('photo-credit').replaceChildren();$('photo-credit').hidden=true;
+      showPhoto(photos[place.name]);
+    }
+    function showPhoto(photo){
+      loading.textContent='Loading saved photo…';loading.classList.remove('hidden');
+      image.onload=()=>loading.classList.add('hidden');
+      image.onerror=()=>{
+        if(current) unavailablePhotos.add(current.name);
+        places=places.filter(place=>!unavailablePhotos.has(place.name));
+        pool=pool.filter(place=>!unavailablePhotos.has(place.name));
+        if(places.length<10){stopTimer();choices.replaceChildren();$('round').textContent='Photo pack is missing';$('prompt').textContent='Not enough travel photos';$('hint').textContent='Add at least ten working photos to the images folder and keep travel-photos.js beside index.html.';return;}
+        draw();
+      };
+      image.src=photo.src;image.alt='Mystery travel destination';
+      const link=document.createElement('a');link.href=photo.sourceUrl;link.target='_blank';link.rel='noreferrer';link.textContent='View photo source';
+      const credit=document.createElement('span');credit.textContent=photo.artist?`Photo credit: ${photo.artist}${photo.license?` · ${photo.license}`:''}`:(photo.license?`Photo license: ${photo.license}`:'Photo credit and license');
+      $('photo-credit').append(link,credit);
+    }
+    function startTimer(){
+      stopTimer();deadline=Date.now()+15000;
+      const update=()=>{const remaining=deadline-Date.now();const sec=Math.max(0,Math.ceil(remaining/1000));$('timer').textContent=`${sec}s`;$('timer').classList.toggle('urgent',sec<=5);if(remaining<=0)timeExpired();};
+      update();timerHandle=setInterval(update,100);
+    }
+    function draw(){
+      if(!pool.length)freshPool();
+      current=pool.pop();answered=false;
+      $('round').textContent=`Question ${streak+1}`;$('points').textContent=`${streak+1} pts × seconds left`;$('score').textContent=score.toLocaleString();
+      $('prompt').textContent='Where is this place?';$('hint').textContent='Choose from the ten options. A wrong answer ends your run.';
+      $('message').textContent='';$('message').className='message';$('continue').classList.add('hidden');$('restart').classList.add('hidden');$('error').classList.add('hidden');
+      choices.replaceChildren();
+      const distractors=shuffle(places.filter(p=>p.name!==current.name)).slice(0,9);
+      shuffle([...distractors,current]).forEach(option=>{const b=document.createElement('button');b.type='button';b.className='choice';b.textContent=option.name;b.addEventListener('click',()=>answer(option,b));choices.append(b);});
+      image.onload=null;image.onerror=null;image.removeAttribute('src');image.classList.remove('revealed');$('photo-credit').hidden=true;image.alt='Mystery travel destination';loading.textContent='Finding a Wikipedia photo…';loading.classList.remove('hidden');
+      setPhoto(current);startTimer();
+    }
+    function rankNote(place){const rank=rankByName.get(place.name);return rank?` This place is #${rank.toLocaleString()} in the dataset’s visitor-count ranking.`:'';}
+    function endGame(message){stopTimer();recordScore();$('round').textContent='Game over';$('points').textContent=`${score.toLocaleString()} points`;$('prompt').textContent='Run complete';$('hint').textContent=message;$('score').textContent=score.toLocaleString();choices.querySelectorAll('button').forEach(b=>b.disabled=true);$('continue').classList.add('hidden');$('restart').classList.remove('hidden');}
+    function answer(option,selected){
+      if(answered)return;
+      const seconds=Math.max(0,Math.ceil((deadline-Date.now())/1000));if(seconds<=0){timeExpired();return;}
+      answered=true;stopTimer();$('timer').textContent=`${seconds}s`;choices.querySelectorAll('button').forEach(b=>b.disabled=true);
+      if(option.name===current.name){const base=streak+1,earned=base*seconds;streak++;score+=earned;revealImage();$('round').textContent='Correct!';$('points').textContent=`+${earned} points (${base} × ${seconds}s)`;$('prompt').textContent=current.name;$('hint').textContent=`Nice one!${rankNote(current)}`;$('score').textContent=score.toLocaleString();$('message').textContent=`You earned ${earned} points. Total: ${score.toLocaleString()}.`;$('message').className='message good';selected.classList.add('correct');$('continue').classList.remove('hidden');$('continue').focus();}
+      else {revealImage();$('round').textContent='Game over';$('points').textContent=`${score.toLocaleString()} points`;$('prompt').textContent=`It was ${current.name}`;$('hint').textContent=`That guess ended your run.${rankNote(current)} Try again to beat your score.`;$('message').textContent='Not quite!';$('message').className='message bad';selected.classList.add('wrong');[...choices.querySelectorAll('button')].find(b=>b.textContent===current.name)?.classList.add('correct');$('score').textContent=score.toLocaleString();recordScore();$('restart').classList.remove('hidden');$('restart').focus();}
+    }
+    function timeExpired(){if(answered)return;answered=true;stopTimer();$('timer').textContent='0s';$('round').textContent='Game over';$('points').textContent=`${score.toLocaleString()} points`;revealImage();choices.querySelectorAll('button').forEach(b=>b.disabled=true);$('prompt').textContent=`Time’s up! It was ${current.name}`;$('hint').textContent=`The timer ran out.${rankNote(current)} Try again to beat your score.`;$('message').textContent='Time ran out!';$('message').className='message bad';[...choices.querySelectorAll('button')].find(b=>b.textContent===current.name)?.classList.add('correct');recordScore();$('restart').classList.remove('hidden');}
+    $('continue').addEventListener('click',draw);
+    $('restart').addEventListener('click',()=>{score=0;streak=0;scoreRecorded=false;freshPool();draw();});
+    renderHighScores();
+    if(places.length<10){$('round').textContent='Photo pack is missing';$('prompt').textContent='Travel photos are not installed';$('hint').textContent='Keep travel-photos.js and the images folder beside index.html.';}
+    else {freshPool();draw();}
+  })();
+  </script>
+</body>
+</html>
