@@ -21,3 +21,8 @@
 - `travel/README.md` currently says the quiz searches Wikipedia at question time and caches links in the browser. That statement is stale: `index.html` uses the local `TRAVEL_PHOTOS` map and filters the question pool to saved-photo entries. Update the README if requested.
 - The source-data, mapped-photo, and no-photo counts leave several entries unaccounted for. Check names against the source before expanding or promising full coverage.
 - Preserve source and license credits without using answer-revealing image filenames or captions in the question view.
+
+## Latest change
+
+- The source link now uses generic “View photo source” text rather than exposing the source page or image filename. Photographer and license information remain visible as attribution.
+- If a saved image fails to load, the quiz removes that destination from the current question pool and skips to another one. It reports when fewer than ten working photos remain.

@@ -82,10 +82,11 @@
     const image = $('place-image'), loading = $('loading'), choices = $('choices');
     const allPlaces = Array.isArray(window.TRAVEL_PLACES) ? window.TRAVEL_PLACES.filter(p => p.name) : [];
     const photos = window.TRAVEL_PHOTOS || {};
-    const places = allPlaces.filter(p => photos[p.name]);
+    let places = allPlaces.filter(p => photos[p.name]);
     const ranked = [...allPlaces].sort((a,b) => (Number(b.visitors)||0) - (Number(a.visitors)||0) || a.name.localeCompare(b.name));
     const rankByName = new Map(ranked.map((p,i) => [p.name, i+1]));
     let pool = [], score = 0, streak = 0, current = null, answered = false, deadline = 0, timerHandle = null, scoreRecorded = false;
+    const unavailablePhotos = new Set();
     const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
     function freshPool() { pool = shuffle([...places]); }
     function readHighScores() {
@@ -111,10 +112,16 @@
     function showPhoto(photo){
       loading.textContent='Loading saved photo…';loading.classList.remove('hidden');
       image.onload=()=>loading.classList.add('hidden');
-      image.onerror=()=>{loading.textContent='Saved photo could not be loaded';loading.classList.remove('hidden');};
+      image.onerror=()=>{
+        if(current) unavailablePhotos.add(current.name);
+        places=places.filter(place=>!unavailablePhotos.has(place.name));
+        pool=pool.filter(place=>!unavailablePhotos.has(place.name));
+        if(places.length<10){stopTimer();choices.replaceChildren();$('round').textContent='Photo pack is missing';$('prompt').textContent='Not enough travel photos';$('hint').textContent='Add at least ten working photos to the images folder and keep travel-photos.js beside index.html.';return;}
+        draw();
+      };
       image.src=photo.src;image.alt='Mystery travel destination';
-      const link=document.createElement('a');link.href=photo.sourceUrl;link.target='_blank';link.rel='noreferrer';link.textContent=`Photo source: ${photo.sourceTitle}`;
-      const credit=document.createElement('span');credit.textContent=photo.artist?` · ${photo.artist}${photo.license?` · ${photo.license}`:''}`:(photo.license?` · ${photo.license}`:'');
+      const link=document.createElement('a');link.href=photo.sourceUrl;link.target='_blank';link.rel='noreferrer';link.textContent='View photo source';
+      const credit=document.createElement('span');credit.textContent=photo.artist?`Photo credit: ${photo.artist}${photo.license?` · ${photo.license}`:''}`:(photo.license?`Photo license: ${photo.license}`:'Photo credit and license');
       $('photo-credit').append(link,credit);
     }
     function startTimer(){
